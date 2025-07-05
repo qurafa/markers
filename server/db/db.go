@@ -53,7 +53,7 @@ func AddMark(m *types.Mark) error {
 		return fmt.Errorf("failed to insert mark: %v", err)
 	}
 
-	fmt.Printf("Inserted mark with ID: %d \n at %v", m.ID, m.Created)
+	fmt.Printf("Inserted mark with ID: %v \n at %v", m.ID, m.Created)
 
 	return nil
 }
@@ -61,10 +61,13 @@ func AddMark(m *types.Mark) error {
 func GetMark(m *types.Mark) error {
 
 	if m == nil {
-		return fmt.Errorf("id can't be null")
+		return fmt.Errorf("mark can't be null")
 	}
 
-	sql := `SELECT name, alias, notes, ST_AsGeoJSON(geom) AS geojson, img_url, created, updated FROM markers WHERE id = $1`
+	sql := `
+	SELECT name, alias, notes, ST_AsGeoJSON(geom) AS geojson, img_url, created, updated FROM markers
+	WHERE id = $1
+	`
 
 	fmt.Println(m.ID)
 
@@ -86,10 +89,10 @@ func GetMark(m *types.Mark) error {
 	m.Feature.Properties = map[string]any{}
 
 	if gErr := json.Unmarshal(geoJSONData, &m.Feature.Geometry); gErr != nil {
-		return fmt.Errorf("Unable to parse geom for id: %v : %v", m.ID, gErr)
+		return fmt.Errorf("unable to parse geom for id: %v : %v", m.ID, gErr)
 	}
 
-	fmt.Printf("Selected mark with ID: %d \n %v \n", m.ID, m)
+	fmt.Printf("Selected mark with ID: %v \n %v \n", m.ID, m)
 
 	return nil
 }
@@ -97,14 +100,16 @@ func GetMark(m *types.Mark) error {
 func GetAllMarks() (types.Marks, error) {
 	var marks types.Marks
 
-	sql := `SELECT id, name, alias, notes, ST_AsGeoJSON(geom) AS geojson, img_url, created, updated FROM markers`
+	sql := `
+	SELECT id, name, alias, notes, ST_AsGeoJSON(geom) AS geojson, img_url, created, updated FROM markers
+	`
 
 	rows, dbErr := dbConn.Query(
 		context.Background(),
 		sql)
 
 	if dbErr != nil {
-		return types.Marks{}, fmt.Errorf("Unable to get all Marks: %v", dbErr)
+		return types.Marks{}, fmt.Errorf("unable to get all Marks: %v", dbErr)
 	}
 
 	defer rows.Close()
@@ -122,13 +127,82 @@ func GetAllMarks() (types.Marks, error) {
 		m.Feature.Properties = map[string]any{}
 
 		if gErr := json.Unmarshal(geoJSONData, &m.Feature.Geometry); gErr != nil {
-			return types.Marks{}, fmt.Errorf("Unable to parse geom for id: %v : %v", m.ID, gErr)
+			return types.Marks{}, fmt.Errorf("unable to parse geom for id: %v : %v", m.ID, gErr)
 		}
 
 		marks.Marks = append(marks.Marks, m)
 	}
 
 	return marks, nil
+}
+
+func ModifyMark(m *types.Mark) error {
+	if m == nil {
+		return fmt.Errorf("mark cannot be nil")
+	}
+
+	sql := `
+	UPDATE markers
+	SET name = $2, alias = $3, notes = $4, geom = ST_GeomFromText($5, 4326), img_url = $6
+	WHERE id = $1
+	RETURNING id, created, updated;
+	`
+	// fmt.Print(m.Feature)
+
+	//Note: not doing anything with the geom properties for now
+	row := dbConn.QueryRow(
+		context.Background(),
+		sql,
+		m.ID, m.Name, m.Alias, m.Notes, m.Feature.Geometry.String(), m.ImgURL)
+
+	if err := row.Scan(&m.ID, &m.Created, &m.Updated); err != nil {
+		return fmt.Errorf("failed to insert mark: %v", err)
+	}
+
+	fmt.Printf("Modified mark with ID: %v \n at %v", m.ID, m.Created)
+
+	return nil
+}
+
+func DeleteMark(m *types.Mark) error {
+	if m == nil {
+		return fmt.Errorf("mark can't be null")
+	}
+
+	sql := `
+	DELETE FROM markers
+	WHERE id = $1
+	RETURNING name, alias, notes, geom, img_url, created, updated;
+	`
+
+	row, dbErr := dbConn.Query(
+		context.Background(),
+		sql,
+		m.ID)
+
+	if dbErr != nil {
+		return fmt.Errorf("failed to delete mark: %v", dbErr)
+	}
+
+	defer row.Close()
+
+	var geoJSONData []byte
+
+	if rErr := row.Scan(&m.Name, &m.Alias, &m.Notes, &geoJSONData, &m.ImgURL, &m.Created, &m.Updated); rErr != nil {
+		return fmt.Errorf("failed to scan mark: %v", rErr)
+	}
+
+	// default types and properties for now, no implementation considering either for now
+	m.Feature.Type = "Feature"
+	m.Feature.Properties = map[string]any{}
+
+	if gErr := json.Unmarshal(geoJSONData, &m.Feature.Geometry); gErr != nil {
+		return fmt.Errorf("unable to parse geom for id: %v : %v", m.ID, gErr)
+	}
+
+	fmt.Printf("Deleted mark with ID: %v \n", m.ID)
+
+	return nil
 }
 
 func CloseConnection() {

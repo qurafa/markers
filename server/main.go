@@ -30,6 +30,10 @@ func main() {
 	router.GET("/marks/:id", getMark)
 	router.GET("/marks", getAllMarks)
 
+	router.PUT("/mark", modifyMark)
+
+	router.DELETE("/marks/:id", deleteMark)
+
 	// run server
 	router.Run("localhost:3333")
 }
@@ -85,7 +89,20 @@ func getAllMarks(c *gin.Context) {
 }
 
 func modifyMark(c *gin.Context) {
-	// id := c.Param("id")
+	var modMark types.Mark
+
+	if err := c.BindJSON(&modMark); err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON input"})
+		return
+	}
+
+	fmt.Printf("Modified Mark: %v \n", modMark)
+
+	if dbErr := db.ModifyMark(&modMark); dbErr != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"error": dbErr.Error()})
+	} else {
+		c.IndentedJSON(http.StatusAccepted, modMark)
+	}
 }
 
 func modifyMarks(c *gin.Context) {
@@ -93,7 +110,16 @@ func modifyMarks(c *gin.Context) {
 }
 
 func deleteMark(c *gin.Context) {
+	id := c.Param("id")
 
+	var mark types.Mark
+	mark.ID = id
+
+	if dbErr := db.DeleteMark(&mark); dbErr != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"error": dbErr.Error()})
+	} else {
+		c.IndentedJSON(http.StatusAccepted, mark)
+	}
 }
 
 func deleteMarks(c *gin.Context) {
