@@ -52,6 +52,7 @@ dependencies {
     implementation("com.mapbox.maps:android:11.13.1")
     // If you're using compose also add the compose extension
     implementation("com.mapbox.extension:maps-compose:11.13.1")
+    implementation(libs.androidx.navigation.compose.android)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
