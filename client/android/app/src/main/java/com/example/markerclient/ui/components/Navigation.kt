@@ -15,7 +15,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.navigation.compose.NavHost
 
 
 enum class MarkerScreen(@StringRes val title: Int){
@@ -34,7 +33,7 @@ fun Navigation(
 ) {
     BottomAppBar(
         modifier = modifier,
-        containerColor = Color(1,0,0,1)
+        containerColor = Color(0,0,0,1)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -53,5 +52,4 @@ fun Navigation(
             }
         }
     }
-//    NavHost()
 }
