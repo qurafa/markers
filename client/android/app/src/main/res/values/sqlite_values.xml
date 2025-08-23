@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="db_name" translatable="false" tools:ignore="UnusedResources">markDbLite</string>
+    <string name="db_version" translatable="false" tools:ignore="UnusedResources">1</string>
+    <string name="table_name" translatable="false" tools:ignore="UnusedResources">1</string>
+</resources>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="map_marks_geojson_source_id">marks-geoJson</string>
+    <string name="map_marks_layer_id">marks-layer</string>
+    <string name="map_marks_buffer_geojson_source_id">marks-buffer-geoJson</string>
+    <string name="map_marks_buffer_layer_id">marks-buffer-layer</string>
+
+    <color name="mark_circle_color">#FF731A73</color>
+        <color name="mark_buffer_circle_color">#FFD930D9</color>
+
+    <dimen name="mark_circle_radius">12.5dp</dimen>
+    <dimen name="mark_buffer_circle_radius">15dp</dimen>
+
+    <string name="mark_default_title">Mark%d</string>
+</resources>

@@ -8,7 +8,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.rememberNavController
 import com.example.markerclient.ui.screens.MainScreen
 
-public class MainActivity : ComponentActivity() {
+class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -19,7 +19,7 @@ public class MainActivity : ComponentActivity() {
 
     @Preview
     @Composable
-    fun BottomBarPreview() {
+    fun MainActivityPreview() {
         val navController = rememberNavController()
         MainScreen(navController)
     }
