@@ -2,6 +2,7 @@ package com.example.markerclient.ui.theme
 
 import android.app.Activity
 import android.os.Build
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
@@ -31,6 +32,18 @@ private val LightColorScheme = lightColorScheme(
     onBackground = Color(0xFF1C1B1F),
     onSurface = Color(0xFF1C1B1F),
     */
+)
+
+ val NavStatBarDarkColorScheme = darkColorScheme(
+    primary = Purple80Alpha50,
+    secondary = PurpleGrey80Alpha50,
+    tertiary = Pink80Alpha50
+)
+
+val NavStatBarLightColorScheme = lightColorScheme(
+    primary = Purple40Alpha50,
+    secondary = PurpleGrey40Alpha50,
+    tertiary = Pink40Alpha50
 )
 
 @Composable

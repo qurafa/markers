@@ -8,8 +8,8 @@
     <color name="mark_circle_color">#FF731A73</color>
         <color name="mark_buffer_circle_color">#FFD930D9</color>
 
-    <dimen name="mark_circle_radius">12.5dp</dimen>
-    <dimen name="mark_buffer_circle_radius">15dp</dimen>
+    <dimen name="mark_circle_radius">18dp</dimen>
+    <dimen name="mark_buffer_circle_radius">20dp</dimen>
 
     <string name="mark_default_title">Mark%d</string>
 </resources>

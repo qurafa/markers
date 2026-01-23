@@ -1,10 +1,19 @@
 package com.example.markerclient.ui.screens
 
 import android.util.Log
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -12,13 +21,17 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
-import com.example.markerclient.R
-import com.example.markerclient.domain.map.GetExampleListOfFeatures
 import com.mapbox.geojson.Feature
 import com.mapbox.maps.InteractionContext
 import com.mapbox.maps.MapboxDelicateApi
@@ -41,33 +54,29 @@ import com.mapbox.maps.plugin.locationcomponent.createDefault2DPuck
 import com.mapbox.maps.plugin.locationcomponent.location
 import com.mapbox.maps.plugin.viewport.data.FollowPuckViewportStateOptions
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.launch
 import androidx.compose.ui.res.stringResource
-import com.example.markerclient.domain.CustomDismissCardViewModel
-import com.example.markerclient.domain.NavigationTrailingButtonViewModel
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import com.example.markerclient.R
+import com.example.markerclient.domain.CustomDismissCard
+import com.example.markerclient.domain.ToolbarTrailingButton
 import com.example.markerclient.ui.components.MarkContent
-import com.google.gson.JsonElement
-import com.google.gson.JsonObject
-import com.mapbox.maps.extension.style.expressions.dsl.generated.properties
 import com.mapbox.maps.plugin.viewport.ViewportStatus
-import org.json.JSONArray
 import com.example.markerclient.domain.Mark
-import com.example.markerclient.domain.MarkViewModel
-import com.google.gson.JsonParser
+import com.example.markerclient.domain.viewModel.MarkViewModel
+import kotlinx.coroutines.launch
 
-@OptIn(MapboxDelicateApi::class, ExperimentalMaterial3Api::class)
+@OptIn(MapboxDelicateApi::class, ExperimentalMaterial3Api::class,
+    ExperimentalMaterial3ExpressiveApi::class
+)
 @Composable
 fun MapScreen(modifier : Modifier,
               mapViewportState : MapViewportState,
               coroutineScope : CoroutineScope,
               markViewModel : MarkViewModel,
-              navigationTrailingButtonViewModel: NavigationTrailingButtonViewModel,
-              customDismissCardViewModel : CustomDismissCardViewModel
+              navigationTrailingButton: ToolbarTrailingButton,
+              customDismissCard : CustomDismissCard
 ) {
-    val viewportStatus by remember { derivedStateOf { mapViewportState.mapViewportStatus}}
-
     // Get Resource variables
     val MARKER_GEOJSON_SOURCE_ID : String = stringResource(R.string.map_marks_geojson_source_id)
     val MARKER_LAYER_ID : String = stringResource(R.string.map_marks_layer_id)
@@ -79,17 +88,17 @@ fun MapScreen(modifier : Modifier,
     val MARKER_BUFFER_LAYER_COLOR : Color = colorResource(R.color.mark_buffer_circle_color)
     val MARKER_BUFFER_LAYER_CIRCLE_RADIUS : Double = dimensionResource(R.dimen.mark_buffer_circle_radius).value.toDouble()
 
+    // Current scope
+    val scope = rememberCoroutineScope()
+
+    val viewportStatus by remember { derivedStateOf { mapViewportState.mapViewportStatus}}
     val mapCoroutineScope = coroutineScope
 
     // Initialize mapState
     val mapState = rememberMapState {}
 
-    // get marks from the repository
-    val marks by markViewModel.marks.collectAsState()
     // get features from the repository
     val markerFeatures by markViewModel.markFeatures.collectAsState()
-    // get buffer marks from the repository
-    val bufferMarks by markViewModel.bufferMarks.collectAsState()
     // get buffer features from the repository
     val markerBufferFeatures by markViewModel.bufferMarkFeatures.collectAsState()
 
@@ -115,14 +124,21 @@ fun MapScreen(modifier : Modifier,
     // View model for the currently selected mark
     var selectedMark: Mark? by remember { mutableStateOf(Mark()) }
 
+    // For triggering haptic feedback
+    val haptic = LocalHapticFeedback.current
+
     // Set Navigation FAB
     LaunchedEffect(Unit) {
-        navigationTrailingButtonViewModel.updateButton(
+        // reset the dismissable card on loading the map screen
+        customDismissCard.reset()
+
+        navigationTrailingButton.updateButton(
             visible = true,
             icon = Icons.Filled.MyLocation,
             action = {
-                mapViewportState
-                    .transitionToFollowPuckState(mapViewDefaultFollowPuckViewportStateOptions())
+                mapViewportState.transitionToFollowPuckState(
+                        mapViewDefaultFollowPuckViewportStateOptions()
+                    )
             }
         )
     }
@@ -130,24 +146,37 @@ fun MapScreen(modifier : Modifier,
     // update FAB visibility
     LaunchedEffect(viewportStatus) {
         if ( viewportStatus == ViewportStatus.Idle) {
-            navigationTrailingButtonViewModel.updateButton(visible = true)
+            navigationTrailingButton.updateButton(visible = true)
         }
         else{
-            navigationTrailingButtonViewModel.updateButton(visible = false)
+            navigationTrailingButton.updateButton(visible = false)
         }
     }
 
+    // TO-DO Add search bar
+
+    // Set up Mapbox Map
     MapboxMap(
         modifier = modifier.fillMaxSize(),
         mapViewportState = mapViewportState,
         mapState = mapState,
+        compass = { Compass(
+            modifier = Modifier
+                .windowInsetsPadding(WindowInsets.systemBars)
+                .size(50.dp, 50.dp)
+            ) },
+        scaleBar = { ScaleBar(
+            modifier = Modifier
+                .windowInsetsPadding(WindowInsets.systemBars)
+        ) },
         style = {
+            // Map style
             MapStyle(
                 style = Style.STANDARD,
                 styleState = rememberStyleState{
                     styleInteractionsState
                         .onMapLongClicked { interactionContext ->
-                            handleMapLongClickInteraction(interactionContext, markViewModel, markerBufferFeatures)
+                            handleMapLongClickInteraction(interactionContext, markViewModel,haptic, scope)
                             true
                         }
                         .onLayerClicked(id = MARKER_LAYER_ID) { featureSetFeatureState, interactionContext ->
@@ -160,8 +189,7 @@ fun MapScreen(modifier : Modifier,
                         }
                 }
             )
-
-            // Add layer for buffer markers
+            // Add circle layer for buffer markers
             CircleLayer(
                 sourceState = markerBufferGeoJsonSource,
                 layerId = MARKER_BUFFER_LAYER_ID
@@ -169,8 +197,7 @@ fun MapScreen(modifier : Modifier,
                 circleColor = ColorValue(MARKER_BUFFER_LAYER_COLOR)
                 circleRadius = DoubleValue(MARKER_BUFFER_LAYER_CIRCLE_RADIUS)
             }
-
-            // Add layer for persistent markers
+            // Add  circle layer for persistent markers
             CircleLayer(
                 sourceState = markerGeoJsonSource,
                 layerId = MARKER_LAYER_ID
@@ -198,7 +225,10 @@ fun MapScreen(modifier : Modifier,
             showMarkCard = selectedFeatureState != null
         }
 
-        // set displaying the bottom sheet to true
+        val density = LocalDensity.current
+        val imeBottom = WindowInsets.ime.getBottom(density)
+
+        // set displaying the mark card to true
         LaunchedEffect(showMarkCard) {
             if (showMarkCard && selectedFeatureState != null){
                 selectedMark = markViewModel.getMarkById(
@@ -206,16 +236,21 @@ fun MapScreen(modifier : Modifier,
                 )
 
                 selectedMark?.let {
-                    customDismissCardViewModel.update(visible = true,
+                    customDismissCard.update(visible = true,
+                        modifier = customDismissCard.cardModifier
+                            .fillMaxWidth(0.95f)
+                            .fillMaxHeight(0.80f),
                         content = {
-                            MarkContent(mark = selectedMark!!, markViewModel = markViewModel)
+                            MarkContent(
+                                mark = selectedMark!!,
+                                markViewModel = markViewModel)
                         },
                         rtlDismiss = true,
                         ltrDismiss = true ,
                         onDismiss = {
                             selectedFeatureState =  null
                             showMarkCard = false
-                            customDismissCardViewModel.reset()
+                            customDismissCard.reset()
 
                             markViewModel.updateMark(selectedMark!!)
 
@@ -228,7 +263,11 @@ fun MapScreen(modifier : Modifier,
     }
 }
 
-fun handleMapLongClickInteraction(interactionContext : InteractionContext, markViewModel: MarkViewModel, currentFeatures: List<Feature>) {
+fun handleMapLongClickInteraction(
+    interactionContext : InteractionContext,
+    markViewModel: MarkViewModel,
+    hapticFeedback: HapticFeedback,
+    scope : CoroutineScope) {
     // add feature to all marker features
     val bufferFeature = Feature.fromGeometry(
         interactionContext.coordinateInfo.coordinate
@@ -243,12 +282,13 @@ fun handleMapLongClickInteraction(interactionContext : InteractionContext, markV
         feature = bufferFeature
     )
 
-    markViewModel.addMark(newBufferMark)
-}
-
-fun handleMarkerBufferClicked(featureSetFeatureState : FeaturesetFeature<FeatureState>, interactionContext : InteractionContext) {
-    for (key in featureSetFeatureState.properties.keys()) {
-        Log.d("Key", featureSetFeatureState.properties.get(key).toString())
+    scope.launch {
+        markViewModel.addMark(newBufferMark){ markId ->
+            if(markId > 0){
+                // Trigger long-press haptic feedback
+                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+            }
+        }
     }
 }
 

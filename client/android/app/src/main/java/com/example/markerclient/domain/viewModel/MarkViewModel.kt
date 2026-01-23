@@ -1,25 +1,17 @@
-package com.example.markerclient.domain
+package com.example.markerclient.domain.viewModel
 
 import android.app.Application
 import android.util.Log
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.tooling.preview.datasource.LoremIpsum
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.markerclient.db.MarkRepository
 import com.example.markerclient.db.MyDBHandler
+import com.example.markerclient.domain.Mark
 import com.mapbox.geojson.Feature
-import com.mapbox.geojson.Point
-import com.mapbox.maps.interactions.FeatureState
-import com.mapbox.maps.interactions.FeaturesetFeature
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -35,7 +27,7 @@ class MarkViewModel(application: Application) : AndroidViewModel(application) {
         marks.filter { it.markIsBuffer }
     }.stateIn(
         scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
+        started = SharingStarted.Companion.WhileSubscribed(5000),
         initialValue = emptyList()
     )
 
@@ -44,7 +36,7 @@ class MarkViewModel(application: Application) : AndroidViewModel(application) {
         marks.filter { !it.markIsBuffer }
     }.stateIn(
         scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
+        started = SharingStarted.Companion.WhileSubscribed(5000),
         initialValue = emptyList()
     )
 
@@ -53,7 +45,7 @@ class MarkViewModel(application: Application) : AndroidViewModel(application) {
         marks.mapNotNull { mark ->
             try {
                 mark.markFeature.apply{
-                    addNumberProperty(Mark.getDefaultFeatureMarkIdKey(), mark.markId) // Set markId so we know what mark to reference for updates
+                    addNumberProperty(Mark.Companion.getDefaultFeatureMarkIdKey(), mark.markId) // Set markId so we know what mark to reference for updates
                 }
             } catch (e: Exception) {
                 Log.w("MarkViewModel", "Invalid feature for buffer mark ${mark.markId}", e)
@@ -62,7 +54,7 @@ class MarkViewModel(application: Application) : AndroidViewModel(application) {
         }
     }.stateIn(
         scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
+        started = SharingStarted.Companion.WhileSubscribed(5000),
         initialValue = emptyList()
     )
 
@@ -80,7 +72,7 @@ class MarkViewModel(application: Application) : AndroidViewModel(application) {
         }
     }.stateIn(
         scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
+        started = SharingStarted.Companion.WhileSubscribed(5000),
         initialValue = emptyList()
     )
 
@@ -108,15 +100,17 @@ class MarkViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun addMark(mark: Mark) {
+    fun addMark(mark: Mark, onComplete: (Long) -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                val markId = markRepo.addNewMark(mark)
                 if (markId > 0) {
                     Log.d("MarkViewModel", "Added mark with ID: $markId")
                     loadMarks() // Refresh from database
+                    onComplete(markId)
                 } else {
                     Log.e("MarkViewModel", "Failed to add mark")
+                    onComplete(-1L)
                 }
             } catch (e: Exception) {
                 Log.e("MarkViewModel", "Error adding mark", e)
