@@ -699,8 +699,31 @@ class EntryItemRepository(private val dbHandler: MyDBHandler) {
         return success
     }
 
-    fun deleteEntryItem(entryItem: EntryItem) {
+    fun deleteEntryItem(entryItemId: Long) : Boolean {
+        val db = dbHandler.writableDatabase
+        var success = false
+
+        try {
+            db.transaction {
+                // Delete the entry item
+                val rowsDeleted = delete(
+                    DBConstants.EntryItems.ENTRY_ITEM_TABLE_NAME,
+                    "${DBConstants.EntryItems.ENTRY_ITEM_ID_COL} = ?",
+                    arrayOf(entryItemId.toString())
+                )
+
+                success = rowsDeleted > 0
+                Log.d("EntryItemRepository", "Deleted entry item $entryItemId, rows affected: $rowsDeleted")
+            }
+        } catch(e : Exception) {
+            Log.e("EntryItemRepository", "Error deleting entry item $entryItemId", e)
+            success = false
+        }
+
+        return success
     }
+
+    fun deleteEntryItem(entryItem : EntryItem) : Boolean = deleteEntryItem(entryItem.entryItemId)
 }
 
 class MyDBHandler(context : Context?) : SQLiteOpenHelper(context, DBConstants.DB_NAME, null, DBConstants.DB_VERSION){

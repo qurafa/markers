@@ -102,13 +102,15 @@ fun JournalScreen(modifier : Modifier,
 
     Box(modifier = modifier
         .fillMaxSize()
-    ){
+    )
+    {
         LazyColumn (modifier = Modifier
                 .fillMaxSize()
+                .padding(0.dp,0.dp,0.dp,95.dp)
                 .align(Alignment.TopCenter)
                 .zIndex(1f)
-//                .windowInsetsPadding(WindowInsets(0.dp,0.dp,0.dp,100.dp))
-        ){
+        )
+        {
             item{
                 Text(
                     modifier = Modifier
@@ -132,17 +134,6 @@ fun JournalScreen(modifier : Modifier,
                     customDismissCard = customDismissCard
                 )
             }
-
-//            items(entries.value.size){ index ->
-//                JournalEntryCard(
-//                    modifier = Modifier.fillMaxWidth()
-//                        .height(125.dp)
-//                        .padding(8.dp),
-//                    entry = entries.value[index],
-//                    entryViewModel = entryViewModel,
-//                    customDismissCard = customDismissCard
-//                )
-//            }
         }
     }
 }

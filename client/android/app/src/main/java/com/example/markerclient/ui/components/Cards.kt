@@ -24,7 +24,7 @@ fun CustomDismissableCard(
 ) {
     val dismissState = rememberSwipeToDismissBoxState(
         positionalThreshold = {totalDistance ->
-            totalDistance * 0.95f
+            totalDistance * 0.5f
         }
     )
     val scope = rememberCoroutineScope()

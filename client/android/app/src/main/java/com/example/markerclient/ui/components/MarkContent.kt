@@ -170,9 +170,9 @@ fun MarkContent(modifier : Modifier = Modifier, mark : Mark = Mark(), markViewMo
                         showBorder = true,
                         borderWidth = 2.5.dp,
                         borderTop = false,
-                        borderBottom = false,
-                        borderStart = true,
-                        borderEnd = true,
+                        borderBottom = true,
+                        borderStart = false,
+                        borderEnd = false,
                         textFieldState = descFieldState,
                         textStyle = descTextStyle)
                     {

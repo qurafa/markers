@@ -77,6 +77,19 @@ class EntryItemViewModel(application : Application, private val entry: Entry) : 
     }
 
     fun deleteEntryItem(entryItem: EntryItem) {
-
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val success = entryItemRepo.deleteEntryItem(entryItem)
+                if (success) {
+                    Log.d("EntryItemViewModel", "Deleted entryItem ${entryItem.entryItemId}")
+                    // Update local state immediately for responsiveness
+                    _allEntryItems.value = _allEntryItems.value.filter { it.entryItemId != entryItem.entryItemId }
+                } else {
+                    Log.e("EntryItemViewModel", "Failed to delete entryItem ${entryItem.entryItemId}")
+                }
+            } catch (e: Exception) {
+                Log.e("EntryItemViewModel", "Error deleting entryItem ", e)
+            }
+        }
     }
 }
