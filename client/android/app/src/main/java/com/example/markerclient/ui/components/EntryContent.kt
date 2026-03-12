@@ -227,6 +227,15 @@ fun EntryContent(modifier : Modifier = Modifier, entry : Entry) {
                             }
                         }
                     }
+                    is EntryItem.ImageItem -> {
+                        EntryItemContainer(
+                            entry = entry,
+                            entryItem = entryItem,
+                            isDeleteModeEnabled = isDeleteModeEnabled
+                        ) {
+                            ///...
+                        }
+                    }
                     else -> {
                         Text(text = "Under construction...")
                     }
