@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">markerClient</string>
+    <string name="app_name">markers</string>
     <string name="map_screen">Map Screen</string>
     <string name="journal_screen">Journal Screen</string>
     <string name="audio_screen">Audio Screen</string>
